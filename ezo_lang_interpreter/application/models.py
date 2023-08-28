@@ -10,8 +10,10 @@ class StatusCodes(models.TextChoices):
     loop_stack_out_of_memory = "Ool", "Loop stack out of memory"
     out_of_memory = "Oom", "Out of memory"
     missing_closing_bracket = "Mcb", "Missing closing bracket"
-    missing_opening_bracket = "Mob", "Missing opening bracket",
+    missing_opening_bracket = "Mob", "Missing opening bracket"
     output_out_of_memory = "Ooo", "Output out of memory"
+    wrong_program_code = "Wpc", "Wrong program code"
+    no_end_instruction = "Nei", "No end instruction"
 
 
 class BrainfuckProgram(models.Model):
