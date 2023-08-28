@@ -11,5 +11,7 @@ urlpatterns = [
     path('brainfuck/<int:pk>/', views.brainfuck_endpoint_detail),
     path('befunge/', views.befunge_endpoint_list),
     path('befunge/<int:pk>/', views.befunge_endpoint_detailed),
+    path('whitespace/', views.whitespace_endpoint_list),
+    path('whitespace/<int:pk>/', views.whitespace_endpoint_detailed),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]

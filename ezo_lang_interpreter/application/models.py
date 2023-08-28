@@ -20,7 +20,7 @@ class BrainfuckProgram(models.Model):
 
     id = models.IntegerField(primary_key=True, auto_created=True)
 
-    code = models.TextField()
+    code = models.TextField(blank=False)
     name = models.CharField(max_length=30)
     output = models.TextField(blank=False, default="")
     pointer = models.IntegerField(default=0)

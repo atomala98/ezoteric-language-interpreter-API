@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from application.interpreters.brainfuck import BrainfuckInterperet, parse_to_int_array, parse_to_str_representation
 from application.interpreters.befunge import BefungeInterperet
+from application.interpreters.whitespace import WhitespaceInterperet
 
 from ezo_lang_interpreter.settings import APPLICATION_SETTINGS
-from .models import BefungeDirections, BefungeProgram, BefungeStringMode, BrainfuckProgram, StatusCodes
+from .models import BefungeDirections, BefungeProgram, BefungeStringMode, BrainfuckProgram, StatusCodes, WhitespaceProgram
 
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
@@ -181,8 +182,7 @@ class BefungeInputSerializer(serializers.ModelSerializer):
 WHITESPACE_SETTINGS = APPLICATION_SETTINGS["WHITESPACE"]
 
     
-class WhitespaceSerializers(serializers.ModelSerializer):
-
+class WhitespaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BefungeProgram
@@ -201,9 +201,46 @@ class WhitespaceSerializers(serializers.ModelSerializer):
         validated_data["labels"] = ""
 
         validated_data["status_code"] = StatusCodes.running
-        
-        interpreter = BefungeInterperet(validated_data)
+
+        interpreter = WhitespaceInterperet(validated_data)
         interpreter.run()
 
-        return BefungeProgram.objects.create(**interpreter.retrieve())
+        return WhitespaceProgram.objects.create(**interpreter.retrieve())
     
+    
+class WhitespaceInputSerializer(serializers.ModelSerializer):
+
+    input_value = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = BefungeProgram
+        fields = ['id', 'code', 'name', 'output', 'status_code', 'input_value']
+        read_only_fields = ('id', 'code', 'name', 'output', 'status_code')
+
+    def update(self, instance, validated_data):
+        
+        
+        if instance.status_code == StatusCodes.waiting_for_char_input:
+            try:
+                memory_input = ord(validated_data["input_value"][0])
+            except:
+                raise Exception("Incorrect input for char input")
+
+        elif instance.status_code == StatusCodes.waiting_for_num_input:
+            try:
+                memory_input = int(validated_data["input_value"])
+            except:
+                raise Exception("Incorrect input for integer")
+            
+        else:
+            raise Exception("Wrong status code")
+        
+        instance.status_code = StatusCodes.running
+
+        interpreter = WhitespaceInterperet(instance.__dict__, memory_input=memory_input)
+        interpreter.run()
+
+        instance = interpreter.retrieve_instance(instance)
+        instance.save()
+
+        return instance

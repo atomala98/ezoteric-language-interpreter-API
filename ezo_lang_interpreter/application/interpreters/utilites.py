@@ -12,6 +12,7 @@ def parse_to_str_representation(l: list[int]) -> str:
 def parse_to_int_str_map(s: str):
     output = {}
     for pair in s.split(","):
+        if not pair: continue
         splitted_pair = pair.split('=')
         output[int(splitted_pair[0])] = splitted_pair[1]
     return output

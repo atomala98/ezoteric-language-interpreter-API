@@ -19,7 +19,7 @@ COMMANDS = {
 
 class WhitespaceInterperet():
 
-    def __init__(self, program_instance, memory_input=0):
+    def __init__(self, program_instance, memory_input=None):
         self.max_interations = APPLICATION_SETTINGS["WHITESPACE"]["MAX_ITERATIONS"]
         self.max_output_size = APPLICATION_SETTINGS["WHITESPACE"]["OUTPUT_MAX_SIZE"]
 
@@ -33,8 +33,11 @@ class WhitespaceInterperet():
 
         self.command_value = 0
 
-        self.memory_stack = parse_to_int_array(program_instance['loop_stack'])
-        self.memory_stack_pointer = program_instance['loop_stack_pointer']
+        self.memory_stack = parse_to_int_array(program_instance['memory_stack'])
+        self.memory_stack_pointer = program_instance['memory_stack_pointer']
+
+        if memory_input != None:
+            self.push(memory_input)
 
         self.heap = parse_to_int_str_map(program_instance["heap"])
         self.labels = parse_to_int_str_map(program_instance["labels"])
@@ -42,6 +45,42 @@ class WhitespaceInterperet():
         self.status_code = program_instance['status_code']
 
         self.code_length = len(self.code)
+
+        self.commands_mapping = {
+            # Stack manipulation
+            5: self.push_value_to_stack,
+            29: self.duplicate,
+            25: self.duplicate_to_top_of_the_stack,
+            30: self.swap,
+            31: self.pop_or_empty,
+            27: self.push_n_times_to_stack,
+
+            # Arithmetic
+            149: self.add,
+            150: self.sub,
+            151: self.multiply,
+            153: self.divide,
+            154: self.modulo,
+
+            # Heap control
+            41: self.add_to_heap,
+            42: self.get_from_heap,
+
+            # Flow control
+            53: self.add_label,
+            55: self.get_label,
+
+            57: self.get_label_if_equal,
+            58: self.get_label_if_negative,
+
+            63: self.end_program,
+
+            # I/O stream
+            181: self.character_output,
+            182: self.numeric_output,
+            185: self.character_input,
+            186: self.numeric_input
+        }
 
         
     def retrieve(self):
@@ -63,15 +102,15 @@ class WhitespaceInterperet():
 
     def retrieve_instance(self, instance):
         instance.code = self.code
-        instance.name = self.name,
-        instance.output = self.output,
-        instance.pointer = self.pointer,
+        instance.name = self.name
+        instance.output = self.output
+        instance.pointer = self.pointer
 
-        instance.memory_stack = parse_to_str_representation(self.memory_stack),
-        instance.memory_stack_pointer = self.memory_stack_pointer,
+        instance.memory_stack = parse_to_str_representation(self.memory_stack)
+        instance.memory_stack_pointer = self.memory_stack_pointer
 
-        instance.heap = parse_int_str_map_to_str_representation(self.heap),
-        instance.labels = parse_int_str_map_to_str_representation(self.labels),
+        instance.heap = parse_int_str_map_to_str_representation(self.heap)
+        instance.labels = parse_int_str_map_to_str_representation(self.labels)
 
         instance.status_code = self.status_code
 
@@ -81,6 +120,7 @@ class WhitespaceInterperet():
     def run(self):
         it = 0
         while self.pointer < self.code_length and self.status_code == StatusCodes.running:
+            
             try:
                 current_symbol = self.code[self.pointer]
             except:
@@ -91,13 +131,14 @@ class WhitespaceInterperet():
             if self.command_value > 1024:
                 self.status_code = StatusCodes.wrong_program_code
 
-                    
+            if self.command_value in self.commands_mapping:
+                self.run_command(self.commands_mapping[self.command_value])
 
             self.pointer += 1
             it += 1
             if it >= self.max_interations: self.status_code = StatusCodes.out_of_time
         
-        if self.status_code == StatusCodes.running: self.status_code = StatusCodes.finished
+        if self.status_code == StatusCodes.running: self.status_code = StatusCodes.wrong_program_code
        
 
     #-----------------#
@@ -140,7 +181,7 @@ class WhitespaceInterperet():
     # ------------------ #
 
     def add_symbol_to_command(self, symbol):
-        self.command_value = (self.command_value * 43) + COMMANDS[symbol]
+        self.command_value = (self.command_value * 4) + COMMANDS[symbol]
 
 
     def clear_command(self):
@@ -148,19 +189,36 @@ class WhitespaceInterperet():
 
 
     def get_number_argument(self):
+    
+        def get_signed_integer(s):
+            sign = -1 if s[0] == "1" else 1
+            output = 0
+            multiplier = 1
+            for num in s[-1:0:-1]:
+                output += multiplier if num == '1' else 0
+                multiplier *= 2
+            return sign * output if sign > 0 else sign * output - 1
+
+        self.pointer += 1
         output = ""
         while self.code[self.pointer] != '\n':
-            output += 1 if self.code[self.pointer] == '\t' else 0
+            output += "1" if self.code[self.pointer] == '\t' else "0"
             self.pointer += 1
-        return BitArray(bin=output).int
-    
+        return get_signed_integer(output)
+
     #-------------------#
     # PROGRAM FUNCTIONS #
     #-------------------#
+
     
     def run_command(self, f):
         f()
         self.clear_command()
+
+
+    def push_value_to_stack(self):
+        value = self.get_number_argument()
+        self.push(value)
 
 
     def duplicate(self):
@@ -257,6 +315,14 @@ class WhitespaceInterperet():
 
     def end_program(self):
         self.status_code = StatusCodes.finished
+
+
+    def character_output(self):
+        self.output += chr(self.pop_or_empty() % 65536)
+
+
+    def numeric_output(self):
+        self.output += str(self.pop_or_empty())
 
 
     def character_input(self):
