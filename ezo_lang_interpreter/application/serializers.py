@@ -200,6 +200,9 @@ class WhitespaceSerializer(serializers.ModelSerializer):
         validated_data["heap"] = ""
         validated_data["labels"] = ""
 
+        validated_data["subroutines_stack"] = parse_to_str_representation([0] * WHITESPACE_SETTINGS["SUBROUTINES_STACK_SIZE"])
+        validated_data["subroutines_stack_pointer"] = -1
+
         validated_data["status_code"] = StatusCodes.running
 
         interpreter = WhitespaceInterperet(validated_data)

@@ -42,6 +42,9 @@ class WhitespaceInterperet():
         self.heap = parse_to_int_str_map(program_instance["heap"])
         self.labels = parse_to_int_str_map(program_instance["labels"])
 
+        self.subroutine_stack = parse_to_int_array(program_instance['subroutine_stack'])
+        self.subroutine_stack_pointer = program_instance['subroutine_stack_pointer']
+
         self.status_code = program_instance['status_code']
 
         self.code_length = len(self.code)
@@ -69,10 +72,10 @@ class WhitespaceInterperet():
             # Flow control
             53: self.add_label,
             55: self.get_label,
-
+            54: self.start_subroutine,
             57: self.get_label_if_equal,
             58: self.get_label_if_negative,
-
+            59: self.end_subroutine,
             63: self.end_program,
 
             # I/O stream
@@ -296,22 +299,42 @@ class WhitespaceInterperet():
     
     def get_label(self):
         label = self.get_number_argument()
-        self.pointer = self.labels[label]
+        try:
+            self.pointer = self.labels[label]
+        except:
+            self.status_code = StatusCodes.label_does_not_exist
+       
         
-    # TODO start subroutine
+    def start_subroutine(self):
+        label = self.get_number_argument()
+        try:
+            self.subroutine_stack[self.subroutine_stack_pointer] = self.pointer
+        except:
+            self.status_code = StatusCodes.out_of_subroutines_memory
+
+        try:
+            self.pointer = self.labels[label]
+        except:
+            self.status_code = StatusCodes.label_does_not_exist
+
 
     def get_label_if_equal(self):
         if not self.peek() == 0: return
-        label = self.get_number_argument()
-        self.pointer = self.labels[label]
+        self.get_label()
         
 
     def get_label_if_negative(self):
         if not self.peek() < 0: return
-        label = self.get_number_argument()
-        self.pointer = self.labels[label]
+        self.get_label()
         
-    # TODO end subroutine
+
+    def end_subroutine(self):
+        if self.subroutine_stack_pointer < 0:
+            return
+        else:
+            self.pointer = self.subroutine_stack[self.subroutine_stack_pointer]
+            self.subroutine_stack_pointer -= 1
+
 
     def end_program(self):
         self.status_code = StatusCodes.finished

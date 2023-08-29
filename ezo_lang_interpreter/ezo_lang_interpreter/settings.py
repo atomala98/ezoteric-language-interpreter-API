@@ -146,6 +146,7 @@ APPLICATION_SETTINGS = {
         "MEMORY_SIZE": 3000,
         "HEAP_SIZE": 30,
         "LABELS_SIZE": 30,
+        "SUBROUTINES_STACK_SIZE": 30,
         "OUTPUT_MAX_SIZE": 300
     }
 }

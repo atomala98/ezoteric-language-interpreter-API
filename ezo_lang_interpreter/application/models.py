@@ -14,6 +14,8 @@ class StatusCodes(models.TextChoices):
     output_out_of_memory = "Ooo", "Output out of memory"
     wrong_program_code = "Wpc", "Wrong program code"
     no_end_instruction = "Nei", "No end instruction"
+    out_of_subroutines_memory = "Oos", "Out of subroutines memory"
+    label_does_not_exist = "Lne", "Label does not exist"
 
 
 class BrainfuckProgram(models.Model):
@@ -91,6 +93,9 @@ class WhitespaceProgram(models.Model):
 
     heap = models.TextField()
     labels = models.TextField()
+
+    subroutines_stack = models.TextField()
+    subroutines_stack_pointer = models.IntegerField(default=0)
 
     status_code = models.CharField(max_length=3, choices=StatusCodes.choices)
 
