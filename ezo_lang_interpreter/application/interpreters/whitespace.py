@@ -356,10 +356,14 @@ class WhitespaceInterperet():
 
     def character_output(self):
         self.output += chr(self.pop_or_empty() % 65536)
+        if len(self.output) > self.max_output_size:
+            self.status_code = StatusCodes.output_out_of_memory
 
 
     def numeric_output(self):
         self.output += str(self.pop_or_empty())
+        if len(self.output) > self.max_output_size:
+            self.status_code = StatusCodes.output_out_of_memory
 
 
     def character_input(self):

@@ -97,7 +97,7 @@ class BrainfuckInterperet():
 
     def output_char(self):
         self.output += chr(self.memory_array[self.memory_array_pointer])
-        if self.ouptut >= self.max_output_size:
+        if len(self.output) >= self.max_output_size:
             self.status_code = StatusCodes.output_out_of_memory
         
 
@@ -120,11 +120,12 @@ class BrainfuckInterperet():
                     if self.code[self.pointer] == "[": open_bracket_amount += 1
                     if self.code[self.pointer] == "]": open_bracket_amount -= 1
             except:
-                self.status_code = StatusCodes.missing_closing_brackets
+                self.status_code = StatusCodes.missing_closing_bracket
 
 
     def finish_loop(self):
+        if self.loop_stack_pointer <= 0:
+            self.status_code = StatusCodes.missing_opening_bracket
+        
         if self.memory_array[self.memory_array_pointer] != 0: self.pointer = self.loop_stack[self.loop_stack_pointer]
         else: self.loop_stack_pointer -= 1
-        if self.loop_stack_pointer < 0:
-            self.status_code = StatusCodes.missing_opening_bracket

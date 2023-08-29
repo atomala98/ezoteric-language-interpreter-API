@@ -99,7 +99,7 @@ class BrainfuckInputSerializer(serializers.ModelSerializer):
         if instance.status_code != StatusCodes.waiting_for_char_input:
             raise Exception("Wrong status code")
 
-        memory_input = ord(validated_data.get('input', '0'))
+        memory_input = ord(validated_data.get('input_value', '0')[0])
         instance.status_code = StatusCodes.running
 
         interpreter = BrainfuckInterperet(instance.__dict__, memory_input=memory_input)
