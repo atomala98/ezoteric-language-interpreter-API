@@ -1,3 +1,4 @@
+import time
 from application.models import StatusCodes
 from .utilites import parse_to_int_array, parse_to_str_representation, parse_int_str_map_to_str_representation, parse_to_int_str_map
 from ezo_lang_interpreter.settings import APPLICATION_SETTINGS
@@ -42,8 +43,8 @@ class WhitespaceInterperet():
         self.heap = parse_to_int_str_map(program_instance["heap"])
         self.labels = parse_to_int_str_map(program_instance["labels"])
 
-        self.subroutine_stack = parse_to_int_array(program_instance['subroutine_stack'])
-        self.subroutine_stack_pointer = program_instance['subroutine_stack_pointer']
+        self.subroutines_stack = parse_to_int_array(program_instance['subroutines_stack'])
+        self.subroutines_stack_pointer = program_instance['subroutines_stack_pointer']
 
         self.status_code = program_instance['status_code']
 
@@ -99,6 +100,9 @@ class WhitespaceInterperet():
             heap = parse_int_str_map_to_str_representation(self.heap),
             labels = parse_int_str_map_to_str_representation(self.labels),
 
+            subroutines_stack = parse_to_str_representation(self.subroutines_stack),
+            subroutines_stack_pointer = self.subroutines_stack_pointer,
+
             status_code = self.status_code
         )
 
@@ -115,6 +119,9 @@ class WhitespaceInterperet():
         instance.heap = parse_int_str_map_to_str_representation(self.heap)
         instance.labels = parse_int_str_map_to_str_representation(self.labels)
 
+        instance.subroutines_stack = parse_to_str_representation(self.subroutines_stack)
+        instance.subroutines_stack_pointer = self.subroutines_stack_pointer
+
         instance.status_code = self.status_code
 
         return instance
@@ -123,13 +130,14 @@ class WhitespaceInterperet():
     def run(self):
         it = 0
         while self.pointer < self.code_length and self.status_code == StatusCodes.running:
-            
             try:
                 current_symbol = self.code[self.pointer]
             except:
                 self.status_code = StatusCodes.no_end_instruction            
-            
+
             self.add_symbol_to_command(current_symbol)
+            
+            print(self.pointer, self.subroutines_stack[:10], self.memory_stack[:10], self.output, self.subroutines_stack_pointer, self.command_value, COMMANDS[current_symbol])
 
             if self.command_value > 1024:
                 self.status_code = StatusCodes.wrong_program_code
@@ -194,6 +202,10 @@ class WhitespaceInterperet():
     def get_number_argument(self):
     
         def get_signed_integer(s):
+            if len(s) == 0: 
+                self.status_code = StatusCodes.no_end_instruction
+                return
+            
             sign = -1 if s[0] == "1" else 1
             output = 0
             multiplier = 1
@@ -216,6 +228,7 @@ class WhitespaceInterperet():
     
     def run_command(self, f):
         f()
+        print(f.__name__)
         self.clear_command()
 
 
@@ -293,8 +306,10 @@ class WhitespaceInterperet():
 
 
     def add_label(self):
+        pointer = self.pointer - 2
+
         label = self.get_number_argument()
-        self.labels[label] = self.pointer
+        self.labels[label] = pointer
 
     
     def get_label(self):
@@ -308,7 +323,8 @@ class WhitespaceInterperet():
     def start_subroutine(self):
         label = self.get_number_argument()
         try:
-            self.subroutine_stack[self.subroutine_stack_pointer] = self.pointer
+            self.subroutines_stack_pointer += 1
+            self.subroutines_stack[self.subroutines_stack_pointer] = self.pointer + 2
         except:
             self.status_code = StatusCodes.out_of_subroutines_memory
 
@@ -329,11 +345,11 @@ class WhitespaceInterperet():
         
 
     def end_subroutine(self):
-        if self.subroutine_stack_pointer < 0:
+        if self.subroutines_stack_pointer < 0:
             return
         else:
-            self.pointer = self.subroutine_stack[self.subroutine_stack_pointer]
-            self.subroutine_stack_pointer -= 1
+            self.pointer = self.subroutines_stack[self.subroutines_stack_pointer]
+            self.subroutines_stack_pointer -= 1
 
 
     def end_program(self):
