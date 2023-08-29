@@ -137,8 +137,6 @@ class WhitespaceInterperet():
 
             self.add_symbol_to_command(current_symbol)
             
-            print(self.pointer, self.subroutines_stack[:10], self.memory_stack[:10], self.output, self.subroutines_stack_pointer, self.command_value, COMMANDS[current_symbol])
-
             if self.command_value > 1024:
                 self.status_code = StatusCodes.wrong_program_code
 
@@ -228,7 +226,7 @@ class WhitespaceInterperet():
     
     def run_command(self, f):
         f()
-        print(f.__name__)
+        # print(f.__name__)
         self.clear_command()
 
 
@@ -302,11 +300,11 @@ class WhitespaceInterperet():
 
     def get_from_heap(self):
         address = self.pop_or_empty()
-        return self.heap[address]
+        self.push(self.heap[address])
 
 
     def add_label(self):
-        pointer = self.pointer - 2
+        pointer = self.pointer - 3
 
         label = self.get_number_argument()
         self.labels[label] = pointer
@@ -324,7 +322,7 @@ class WhitespaceInterperet():
         label = self.get_number_argument()
         try:
             self.subroutines_stack_pointer += 1
-            self.subroutines_stack[self.subroutines_stack_pointer] = self.pointer + 2
+            self.subroutines_stack[self.subroutines_stack_pointer] = self.pointer
         except:
             self.status_code = StatusCodes.out_of_subroutines_memory
 
